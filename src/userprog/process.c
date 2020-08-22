@@ -30,16 +30,42 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
+  unsigned short length = strlen(file_name);
+  unsigned short temp = length;
+  unsigned short i = 0;
+  for(i; i < length; ++i) {
+    if (file_name[i] == ' '){
+      temp = i;
+      i = 0;
+      break;
+    }
+  }
+  printf("%d\n",temp);
+  char *exec_name;
+  if(temp != length){
+    printf("123\n");
+    exec_name = (char*) malloc (temp);
+    for(i; i < temp; ++i){
+      exec_name[i] = file_name[i];
+      printf("%c\n",exec_name[i]);
+    }
+  }
+  else{
+    printf("456\n");
+    exec_name = file_name;
+  }
 
+  printf("%s\n",exec_name);
+  
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
   if (fn_copy == NULL)
     return TID_ERROR;
-  strlcpy (fn_copy, file_name, PGSIZE);
+  strlcpy (fn_copy, exec_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (exec_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
@@ -437,7 +463,7 @@ setup_stack (void **esp)
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
-        *esp = PHYS_BASE;
+        *esp = PHYS_BASE - 12;
       else
         palloc_free_page (kpage);
     }
