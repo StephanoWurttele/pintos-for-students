@@ -15,54 +15,52 @@
 #include "threads/init.h"
 #include "threads/interrupt.h"
 #include "threads/palloc.h"
+#include "threads/malloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
-
+const char *get_executable(const char *file_name);
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
    before process_execute() returns.  Returns the new process's
    thread id, or TID_ERROR if the thread cannot be created. */
+
+const char *get_executable(const char *file_name){
+  unsigned short length = strlen(file_name);
+  unsigned short temp = length;
+  unsigned short i;
+  for(i = 0; i < length; ++i) {
+    if (file_name[i] == ' '){
+      temp = i;
+      break;
+    }
+  }
+  if(temp != length){
+    char *exec_name = (char*) malloc (temp);
+    for(i = 0; i < temp; ++i){
+      exec_name[i] = file_name[i];
+    }
+    return (const char*) exec_name;
+  }
+  else{
+    return file_name;
+  }
+}
+  
 tid_t
 process_execute (const char *file_name) 
 {
   char *fn_copy;
   tid_t tid;
-  unsigned short length = strlen(file_name);
-  unsigned short temp = length;
-  unsigned short i = 0;
-  for(i; i < length; ++i) {
-    if (file_name[i] == ' '){
-      temp = i;
-      i = 0;
-      break;
-    }
-  }
-  printf("%d\n",temp);
-  char *exec_name;
-  if(temp != length){
-    printf("123\n");
-    exec_name = (char*) malloc (temp);
-    for(i; i < temp; ++i){
-      exec_name[i] = file_name[i];
-      printf("%c\n",exec_name[i]);
-    }
-  }
-  else{
-    printf("456\n");
-    exec_name = file_name;
-  }
-
-  printf("%s\n",exec_name);
-  
+  char *exec_name = (char*) get_executable(file_name);
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
   if (fn_copy == NULL)
     return TID_ERROR;
-  strlcpy (fn_copy, exec_name, PGSIZE);
+  strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (exec_name, PRI_DEFAULT, start_process, fn_copy);
@@ -112,9 +110,12 @@ start_process (void *file_name_)
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
 int
-process_wait (tid_t child_tid UNUSED) 
+process_wait(tid_t child_tid UNUSED)
 {
-  return -1;
+  while(true)
+  {
+    thread_yield();
+  }
 }
 
 /* Free the current process's resources. */
@@ -154,6 +155,7 @@ process_activate (void)
   pagedir_activate (t->pagedir);
 
   /* Set thread's kernel stack for use in processing
+#include "threads/palloc.h"
      interrupts. */
   tss_update ();
 }
@@ -221,7 +223,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+static bool setup_stack (void **esp, const char* file_name);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -248,10 +250,10 @@ load (const char *file_name, void (**eip) (void), void **esp)
   process_activate ();
 
   /* Open executable file. */
-  file = filesys_open (file_name);
+  file = filesys_open (get_executable(file_name));
   if (file == NULL) 
     {
-      printf ("load: %s: open failed\n", file_name);
+      printf ("load: %s: open failed\n", get_executable(file_name));
       goto done; 
     }
 
@@ -328,7 +330,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp))
+  if (!setup_stack (esp, file_name))
     goto done;
 
   /* Start address. */
@@ -453,8 +455,13 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp) 
+setup_stack (void **esp, const char* file_name) 
 {
+  char *params;
+  unsigned short base = strlen(file_name);
+  printf("FILE NAME SIZE: %d", base);
+  char *temp = (char*) malloc (base + 1);
+  const char delimeter = ' ';
   uint8_t *kpage;
   bool success = false;
 
@@ -463,10 +470,46 @@ setup_stack (void **esp)
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
-        *esp = PHYS_BASE - 12;
+        *esp = PHYS_BASE;
       else
         palloc_free_page (kpage);
     }
+  while((params = strtok_r((char*) file_name, &delimeter, (char**) &file_name))){
+    unsigned short i;
+    unsigned short init = base - strlen(params) - 1;
+    printf("\n\nParams: %s\n", params);
+    printf("Strlen params: %d\n", strlen(params));
+    printf("Base: %d\n", base);
+    printf("Init: %d\n", init);
+    if((init>=0 && init <= base)){
+      temp[init] = delimeter;
+    }
+    init += 1;
+    for(i = init; i < base ; ++i){
+      printf("i: %d\n", i);
+      //printf("char: %s\n", params[i-init]);
+      temp[i] = params[i-init];
+    }
+    printf("temp: %s\n", temp);
+    base = init - 1;
+  }
+
+  hex_dump((uintptr_t)*esp, *esp, sizeof(char) * (PHYS_BASE - (*esp)), true);
+
+  while((params = strtok_r((char*) temp, &delimeter, (char**) &temp))){
+    unsigned short size = strlen(params);
+    printf("Params: %s\n", params);
+    printf("strlen params: %d\n", size);
+    *esp -= (size + 1);
+    memcpy(*esp, params, size);
+  }
+  int word_align = (4 - (*((uint8_t *)PHYS_BASE) % 4)) % 4;
+  printf("word_align %d\n", word_align);
+  if(word_align > 0){
+    *esp -= word_align;
+    memset(*esp, 0, word_align);
+  }
+  hex_dump((uintptr_t)*esp, *esp, sizeof(char) * (PHYS_BASE - (*esp)), true);
   return success;
 }
 
