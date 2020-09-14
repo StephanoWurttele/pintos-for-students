@@ -329,16 +329,16 @@ PATH	tests/Makefile	/^PATH := $(shell pwd)\/..\/src\/utils:$(PATH)$/;"	m
 PDBITS	src/threads/pte.h	28;"	d
 PDMASK	src/threads/pte.h	29;"	d
 PDSHIFT	src/threads/pte.h	27;"	d
-PE32Ax	src/userprog/process.c	144;"	d	file:
-PE32Hx	src/userprog/process.c	146;"	d	file:
-PE32Ox	src/userprog/process.c	145;"	d	file:
-PE32Wx	src/userprog/process.c	143;"	d	file:
+PE32Ax	src/userprog/process.c	170;"	d	file:
+PE32Hx	src/userprog/process.c	172;"	d	file:
+PE32Ox	src/userprog/process.c	171;"	d	file:
+PE32Wx	src/userprog/process.c	169;"	d	file:
 PF_P	src/userprog/exception.h	5;"	d
-PF_R	src/userprog/process.c	196;"	d	file:
+PF_R	src/userprog/process.c	222;"	d	file:
 PF_U	src/userprog/exception.h	7;"	d
 PF_W	src/userprog/exception.h	6;"	d
-PF_W	src/userprog/process.c	195;"	d	file:
-PF_X	src/userprog/process.c	194;"	d	file:
+PF_W	src/userprog/process.c	221;"	d	file:
+PF_X	src/userprog/process.c	220;"	d	file:
 PGBITS	src/threads/vaddr.h	19;"	d
 PGMASK	src/threads/vaddr.h	21;"	d
 PGSHIFT	src/threads/vaddr.h	18;"	d
@@ -419,14 +419,14 @@ PTRDIFF_MAX	src/lib/stdint.h	47;"	d
 PTRDIFF_MIN	src/lib/stdint.h	46;"	d
 PTSHIFT	src/threads/pte.h	21;"	d
 PTSPAN	src/threads/pte.h	23;"	d
-PT_DYNAMIC	src/userprog/process.c	186;"	d	file:
-PT_INTERP	src/userprog/process.c	187;"	d	file:
-PT_LOAD	src/userprog/process.c	185;"	d	file:
-PT_NOTE	src/userprog/process.c	188;"	d	file:
-PT_NULL	src/userprog/process.c	184;"	d	file:
-PT_PHDR	src/userprog/process.c	190;"	d	file:
-PT_SHLIB	src/userprog/process.c	189;"	d	file:
-PT_STACK	src/userprog/process.c	191;"	d	file:
+PT_DYNAMIC	src/userprog/process.c	212;"	d	file:
+PT_INTERP	src/userprog/process.c	213;"	d	file:
+PT_LOAD	src/userprog/process.c	211;"	d	file:
+PT_NOTE	src/userprog/process.c	214;"	d	file:
+PT_NULL	src/userprog/process.c	210;"	d	file:
+PT_PHDR	src/userprog/process.c	216;"	d	file:
+PT_SHLIB	src/userprog/process.c	215;"	d	file:
+PT_STACK	src/userprog/process.c	217;"	d	file:
 Prev	src/tests/Algorithm/Diff.pm	/^sub Prev {$/;"	s
 PrintIndex	doc/texi2html	/^sub PrintIndex$/;"	s
 PrintIndexPage	doc/texi2html	/^sub PrintIndexPage$/;"	s
