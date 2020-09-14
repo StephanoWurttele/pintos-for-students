@@ -459,11 +459,11 @@ setup_stack (void **esp, const char* file_name)
 {
   char *params;
   unsigned short base = strlen(file_name);
-  printf("FILE NAME SIZE: %d", base);
+  printf("FILE NAME: %s\nSIZE: %d\n", file_name, base);
   char *temp = (char*) malloc (base + 1);
-  const char delimeter = ' ';
   uint8_t *kpage;
   bool success = false;
+  unsigned short param_count = 0;
 
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
@@ -474,40 +474,45 @@ setup_stack (void **esp, const char* file_name)
       else
         palloc_free_page (kpage);
     }
-  while((params = strtok_r((char*) file_name, &delimeter, (char**) &file_name))){
+  while((params = strtok_r((char*) file_name, " ", (char**) &file_name))){
     unsigned short i;
     unsigned short init = base - strlen(params) - 1;
-    printf("\n\nParams: %s\n", params);
-    printf("Strlen params: %d\n", strlen(params));
-    printf("Base: %d\n", base);
-    printf("Init: %d\n", init);
-    if((init>=0 && init <= base)){
-      temp[init] = delimeter;
-    }
+    if((init>=0 && init <= base)){ temp[init] = ' '; }
     init += 1;
-    for(i = init; i < base ; ++i){
-      printf("i: %d\n", i);
-      //printf("char: %s\n", params[i-init]);
-      temp[i] = params[i-init];
-    }
-    printf("temp: %s\n", temp);
+    for(i = init; i < base ; ++i){ temp[i] = params[i-init]; }
     base = init - 1;
+    param_count += 1;
   }
 
-  hex_dump((uintptr_t)*esp, *esp, sizeof(char) * (PHYS_BASE - (*esp)), true);
-
-  while((params = strtok_r((char*) temp, &delimeter, (char**) &temp))){
+  unsigned int address[param_count];
+  param_count = 0;
+  while((params = strtok_r((char*) temp, " ", (char**) &temp))){
     unsigned short size = strlen(params);
-    printf("Params: %s\n", params);
-    printf("strlen params: %d\n", size);
     *esp -= (size + 1);
     memcpy(*esp, params, size);
+    address[param_count] = (unsigned int) *esp;
+    param_count += 1;
   }
-  int word_align = (4 - (*((uint8_t *)PHYS_BASE) % 4)) % 4;
-  printf("word_align %d\n", word_align);
+  int word_align = (4 - ((PHYS_BASE - *esp) % 4)) % 4;
   if(word_align > 0){
     *esp -= word_align;
     memset(*esp, 0, word_align);
+  }
+  *esp -= 4;
+  memset(*esp, 0, 4);
+  hex_dump((uintptr_t)*esp, *esp, sizeof(char) * (PHYS_BASE - (*esp)), true);
+  unsigned short i;
+  unsigned short j;
+  unsigned short temp2;
+  for(i = 0; i < param_count; ++i){
+    for(j = 0; j < 4; ++j){
+      temp = address[i] % 256;
+      printf("Temp is: %x\n", temp);
+      printf("Caracter %d. %x\n", j,address[i]);
+      *esp -= 1;
+      memset(*esp, temp, 1);
+      address[i] = address[i] / 16 / 16;
+    }
   }
   hex_dump((uintptr_t)*esp, *esp, sizeof(char) * (PHYS_BASE - (*esp)), true);
   return success;
